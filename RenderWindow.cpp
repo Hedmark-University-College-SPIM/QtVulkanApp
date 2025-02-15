@@ -120,7 +120,7 @@ void RenderWindow::initResources()
     pipelineLayoutInfo.setLayoutCount = 0;
     pipelineLayoutInfo.pushConstantRangeCount = 1;  // OEF: PushConstants update
     pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange; // OEF: PushConstants update
-    err = mDeviceFunctions->vkCreatePipelineLayout(logicalDevice, &pipelineLayoutInfo, nullptr, &mPipelineLayout);
+    err = mDeviceFunctions->vkCreatePipelineLayout(logicalDevice, &pipelineLayoutInfo, nullptr, &mPipelineLayout1);
     if (err != VK_SUCCESS)
         qFatal("Failed to create pipeline layout: %d", err);
 
@@ -159,12 +159,12 @@ void RenderWindow::initResources()
     pipelineInfo.pStages = shaderStages;
     pipelineInfo.pVertexInputState = &vertexInputInfo;
 
-    VkPipelineInputAssemblyStateCreateInfo ia;
-    memset(&ia, 0, sizeof(ia));
-    ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    VkPipelineInputAssemblyStateCreateInfo inputAssembly;
+    memset(&inputAssembly, 0, sizeof(inputAssembly));
+    inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     // Dag 220125
-    ia.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    pipelineInfo.pInputAssemblyState = &ia;
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    pipelineInfo.pInputAssemblyState = &inputAssembly;
 
     // The viewport and scissor will be set dynamically via vkCmdSetViewport/Scissor.
     // This way the pipeline does not need to be touched when resizing the window.
@@ -218,10 +218,10 @@ void RenderWindow::initResources()
     dyn.pDynamicStates = dynEnable;
     pipelineInfo.pDynamicState = &dyn;
 
-    pipelineInfo.layout = mPipelineLayout;
+    pipelineInfo.layout = mPipelineLayout1;
     pipelineInfo.renderPass = mWindow->defaultRenderPass();
 
-    err = mDeviceFunctions->vkCreateGraphicsPipelines(logicalDevice, mPipelineCache, 1, &pipelineInfo, nullptr, &mPipeline);
+    err = mDeviceFunctions->vkCreateGraphicsPipelines(logicalDevice, mPipelineCache, 1, &pipelineInfo, nullptr, &mPipeline1);
     if (err != VK_SUCCESS)
         qFatal("Failed to create graphics pipeline: %d", err);
 
@@ -274,7 +274,7 @@ void RenderWindow::startNextFrame()
     rpBeginInfo.pClearValues = clearValues;
     mDeviceFunctions->vkCmdBeginRenderPass(cmdBuf, &rpBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    mDeviceFunctions->vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline);
+    mDeviceFunctions->vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline1);
 
     VkDeviceSize vbOffset = 0;
 
@@ -346,7 +346,7 @@ VkShaderModule RenderWindow::createShader(const QString &name)
 void RenderWindow::setModelMatrix(QMatrix4x4 modelMatrix)
 {
 
-	mDeviceFunctions->vkCmdPushConstants(mWindow->currentCommandBuffer(), mPipelineLayout, 
+	mDeviceFunctions->vkCmdPushConstants(mWindow->currentCommandBuffer(), mPipelineLayout1, 
         VK_SHADER_STAGE_VERTEX_BIT, 0, 16 * sizeof(float), modelMatrix.constData());
 }
 
@@ -455,14 +455,14 @@ void RenderWindow::releaseResources()
 
     VkDevice dev = mWindow->device();
 
-    if (mPipeline) {
-        mDeviceFunctions->vkDestroyPipeline(dev, mPipeline, nullptr);
-        mPipeline = VK_NULL_HANDLE;
+    if (mPipeline1) {
+        mDeviceFunctions->vkDestroyPipeline(dev, mPipeline1, nullptr);
+        mPipeline1 = VK_NULL_HANDLE;
     }
 
-    if (mPipelineLayout) {
-        mDeviceFunctions->vkDestroyPipelineLayout(dev, mPipelineLayout, nullptr);
-        mPipelineLayout = VK_NULL_HANDLE;
+    if (mPipelineLayout1) {
+        mDeviceFunctions->vkDestroyPipelineLayout(dev, mPipelineLayout1, nullptr);
+        mPipelineLayout1 = VK_NULL_HANDLE;
     }
 
     if (mPipelineCache) {

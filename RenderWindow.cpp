@@ -286,8 +286,6 @@ void RenderWindow::startNextFrame()
     rpBeginInfo.pClearValues = clearValues;
     mDeviceFunctions->vkCmdBeginRenderPass(cmdBuf, &rpBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-    mDeviceFunctions->vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline1);
-
     VkDeviceSize vbOffset = 0;
 
     VkViewport viewport{};
@@ -305,11 +303,30 @@ void RenderWindow::startNextFrame()
     mDeviceFunctions->vkCmdSetScissor(cmdBuf, 0, 1, &scissor);
 
     /********************************* Our draw call!: *********************************/
+
+    //binding mPipeline1 == polygones
+    mDeviceFunctions->vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline1);
+
     for (auto it=mObjects.begin(); it!=mObjects.end(); it++)
     {
-        mDeviceFunctions->vkCmdBindVertexBuffers(cmdBuf, 0, 1, &(*it)->mBuffer, &vbOffset);
-        setModelMatrix(mCamera.cMatrix() * (*it)->mMatrix);
-        mDeviceFunctions->vkCmdDraw(cmdBuf, (*it)->mVertices.size(), 1, 0, 0);
+        if (dynamic_cast<VkTriangle*>(*it))
+        {
+            mDeviceFunctions->vkCmdBindVertexBuffers(cmdBuf, 0, 1, &(*it)->mBuffer, &vbOffset);
+            setModelMatrix(mCamera.cMatrix() * (*it)->mMatrix);
+            mDeviceFunctions->vkCmdDraw(cmdBuf, (*it)->mVertices.size(), 1, 0, 0);
+        }
+    }
+    //binding mPipeline2 == lines
+    mDeviceFunctions->vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline2);
+    for (auto it=mObjects.begin(); it != mObjects.end(); it++)
+    {
+        //using dynamic_cast to select objects to draw
+        if (dynamic_cast<VkTriangleSurface*>(*it))
+        {
+            mDeviceFunctions->vkCmdBindVertexBuffers(cmdBuf, 0, 1, &(*it)->mBuffer, &vbOffset);
+            setModelMatrix(mCamera.cMatrix() * (*it)->mMatrix);
+            mDeviceFunctions->vkCmdDraw(cmdBuf, (*it)->mVertices.size(), 1, 0, 0);
+        }
     }
     // Alternativt draw kall ved å traversere unordered map
     /*    for (auto it=mMap.begin(); it!=mMap.end(); it++)

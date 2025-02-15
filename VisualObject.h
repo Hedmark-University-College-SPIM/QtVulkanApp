@@ -14,6 +14,9 @@ public:
     void setName(std::string name);
     std::string getName() const;
 
+    //because of polymorphy in startNextFrame() we need at least one virtual funciton in this class
+    virtual void virtualFunction() {};
+
     //
     VkDeviceMemory mBufferMemory{ VK_NULL_HANDLE };
     VkBuffer mBuffer{ VK_NULL_HANDLE };

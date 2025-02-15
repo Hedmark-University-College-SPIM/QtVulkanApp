@@ -225,6 +225,18 @@ void RenderWindow::initResources()
     if (err != VK_SUCCESS)
         qFatal("Failed to create graphics pipeline: %d", err);
 
+
+    //Making a new pipeline to draw only lines, not polygones
+    //Since most of the info is similar, we reuse the previous made objects, only setting the new parameters
+    //This saves some lines of code
+    mPipeline2 = mPipeline1;        
+    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;   //draw lines
+    // ***** play with this: *****
+    rasterizationState.lineWidth = 10.0f;   //how wide the line will be drawn.
+    pipelineInfo.pInputAssemblyState = &inputAssembly;
+    err = mDeviceFunctions->vkCreateGraphicsPipelines(logicalDevice, mPipelineCache, 1, &pipelineInfo, nullptr, &mPipeline2);
+
+
     if (vertShaderModule)
         mDeviceFunctions->vkDestroyShaderModule(logicalDevice, vertShaderModule, nullptr);
     if (fragShaderModule)
